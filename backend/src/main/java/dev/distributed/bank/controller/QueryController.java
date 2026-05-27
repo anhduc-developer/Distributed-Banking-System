@@ -2,6 +2,7 @@ package dev.distributed.bank.controller;
 
 import dev.distributed.bank.dto.response.ApiResponse;
 import dev.distributed.bank.dto.response.TopCustomerResponse;
+import dev.distributed.bank.dto.response.TopTransactionCustomerResponse;
 import dev.distributed.bank.dto.response.TotalBalanceResponse;
 import dev.distributed.bank.dto.response.TransactionStatsResponse;
 import dev.distributed.bank.entity.TransactionHistory;
@@ -32,9 +33,27 @@ public class QueryController {
         return ApiResponse.ok(queryService.getTopCustomers(limit));
     }
 
+    @GetMapping("/top-depositing-customers")
+    public ApiResponse<List<TopTransactionCustomerResponse>> getTopDepositingCustomers(
+            @RequestParam(name = "limit", defaultValue = "10") int limit) {
+        return ApiResponse.ok(queryService.getTopDepositingCustomers(limit));
+    }
+
     @GetMapping("/inter-branch-transactions")
     public ApiResponse<List<TransactionHistory>> getInterBranchTransactions() {
         return ApiResponse.ok(queryService.getInterBranchTransactions());
+    }
+
+    @GetMapping("/history/deposit")
+    public ApiResponse<List<TransactionHistory>> getDepositHistory(
+            @RequestParam(name = "limit", defaultValue = "50") int limit) {
+        return ApiResponse.ok(queryService.getDepositHistory(limit));
+    }
+
+    @GetMapping("/history/withdraw")
+    public ApiResponse<List<TransactionHistory>> getWithdrawHistory(
+            @RequestParam(name = "limit", defaultValue = "50") int limit) {
+        return ApiResponse.ok(queryService.getWithdrawHistory(limit));
     }
 
     @GetMapping("/multi-branch-customers")

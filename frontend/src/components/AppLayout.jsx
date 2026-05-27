@@ -8,7 +8,7 @@ import {
   DollarOutlined,
   SwapOutlined,
   BarChartOutlined,
-  GithubOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content } = Layout;
@@ -33,8 +33,8 @@ export default function AppLayout() {
         style={{ position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100 }}
       >
         <div className="sidebar-logo">
-          <GithubOutlined className="logo-icon" />
-          <span>MAI ANH DUC</span>
+          <StarOutlined className="logo-icon" />
+          <span>MB BANK</span>
         </div>
         <Menu
           theme="dark"

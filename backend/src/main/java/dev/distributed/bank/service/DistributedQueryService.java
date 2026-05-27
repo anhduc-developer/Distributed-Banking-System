@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+import dev.distributed.bank.dto.response.TopTransactionCustomerResponse;
 
 /**
  * Service: Distributed Query — Truy vấn phân tán.
@@ -151,6 +152,55 @@ public class DistributedQueryService {
     }
 
     // ============================================================
+    // QUERY: Top N khách hàng gửi tiền nhiều nhất
+    // Flow: Top-K từ mỗi site → merge → sort → lấy top N
+    // ============================================================
+
+    public List<TopTransactionCustomerResponse> getTopDepositingCustomers(int limit) {
+        System.out.println("═══ [DISTRIBUTED QUERY] Top " + limit + " Depositing Customers ═══");
+
+        List<TopTransactionCustomerResponse> allCustomers = new ArrayList<>();
+
+        String sql = "SELECT c.customer_id, c.full_name, c.branch_id, " +
+                     "SUM(th.amount) as total_deposit, COUNT(th.transaction_id) as deposit_count " +
+                     "FROM customer c " +
+                     "JOIN account a ON c.customer_id = a.customer_id " +
+                     "JOIN transaction_history th ON a.account_id = th.account_id " +
+                     "WHERE th.transaction_type = 'DEPOSIT' AND th.status = 'SUCCESS' " +
+                     "GROUP BY c.customer_id, c.full_name, c.branch_id " +
+                     "ORDER BY total_deposit DESC LIMIT ?";
+
+        RowMapper<TopTransactionCustomerResponse> mapper = (rs, rowNum) -> new TopTransactionCustomerResponse(
+                rs.getLong("customer_id"),
+                rs.getString("full_name"),
+                rs.getString("branch_id"),
+                rs.getBigDecimal("total_deposit"),
+                rs.getInt("deposit_count")
+        );
+
+        for (String branchId : siteRouter.getAllBranchIds()) {
+            try {
+                JdbcTemplate jdbc = siteRouter.getJdbcTemplate(branchId);
+                List<TopTransactionCustomerResponse> localTop = jdbc.query(sql, mapper, limit);
+                allCustomers.addAll(localTop);
+                System.out.println("  Site " + branchId + ": returned " + localTop.size() + " depositing customers");
+            } catch (Exception e) {
+                System.out.println("  Site " + branchId + ": UNREACHABLE");
+            }
+        }
+
+        List<TopTransactionCustomerResponse> result = allCustomers.stream()
+                .sorted((a, b) -> b.getTotalAmount().compareTo(a.getTotalAmount()))
+                .limit(limit)
+                .collect(Collectors.toList());
+
+        System.out.println("  Merged result: " + result.size() + " depositing customers");
+        System.out.println("═══════════════════════════════════════════");
+
+        return result;
+    }
+
+    // ============================================================
     // QUERY 3: Giao dịch liên chi nhánh gần đây
     // ============================================================
 
@@ -196,6 +246,68 @@ public class DistributedQueryService {
         System.out.println("═══════════════════════════════════════════");
 
         return allTxns;
+    }
+
+    // ============================================================
+    // QUERY: Lịch sử giao dịch Gửi Tiền (Deposit) / Rút Tiền (Withdraw)
+    // ============================================================
+
+    public List<TransactionHistory> getTransactionHistoryByType(String type, int limit) {
+        System.out.println("═══ [DISTRIBUTED QUERY] " + type + " History ═══");
+
+        List<TransactionHistory> allTxns = new ArrayList<>();
+
+        RowMapper<TransactionHistory> mapper = (rs, rowNum) -> {
+            TransactionHistory t = new TransactionHistory();
+            t.setTransactionId(rs.getLong("transaction_id"));
+            t.setTransactionType(rs.getString("transaction_type"));
+            t.setAmount(rs.getBigDecimal("amount"));
+            t.setAccountId(rs.getLong("account_id"));
+            long relId = rs.getLong("related_account_id");
+            t.setRelatedAccountId(rs.wasNull() ? null : relId);
+            t.setRelatedBranchId(rs.getString("related_branch_id"));
+            t.setBalanceAfter(rs.getBigDecimal("balance_after"));
+            t.setStatus(rs.getString("status"));
+            t.setDistributedTxnId(rs.getString("distributed_txn_id"));
+            t.setDescription(rs.getString("description"));
+            t.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            return t;
+        };
+
+        for (String branchId : siteRouter.getAllBranchIds()) {
+            try {
+                JdbcTemplate jdbc = siteRouter.getJdbcTemplate(branchId);
+                List<TransactionHistory> txns = jdbc.query(
+                        "SELECT * FROM transaction_history " +
+                        "WHERE transaction_type = ? " +
+                        "ORDER BY created_at DESC LIMIT ?",
+                        mapper, type, limit);
+                allTxns.addAll(txns);
+            } catch (Exception e) {
+                System.out.println("  Site " + branchId + ": UNREACHABLE");
+            }
+        }
+
+        // Sort by created_at DESC
+        allTxns.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        
+        // Take top limit
+        List<TransactionHistory> result = allTxns.stream()
+                .limit(limit)
+                .collect(Collectors.toList());
+
+        System.out.println("  Total " + type + " transactions: " + result.size());
+        System.out.println("═══════════════════════════════════════════");
+
+        return result;
+    }
+
+    public List<TransactionHistory> getDepositHistory(int limit) {
+        return getTransactionHistoryByType("DEPOSIT", limit);
+    }
+
+    public List<TransactionHistory> getWithdrawHistory(int limit) {
+        return getTransactionHistoryByType("WITHDRAW", limit);
     }
 
     // ============================================================

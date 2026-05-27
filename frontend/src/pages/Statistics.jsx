@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Tag, Tabs, Row, Col, Statistic, Button, InputNumber, Spin, Typography, message } from 'antd';
 import {
-  BarChartOutlined, TrophyOutlined, SwapOutlined, TeamOutlined, ReloadOutlined,
+  BarChartOutlined, TrophyOutlined, SwapOutlined, TeamOutlined, ReloadOutlined, ArrowUpOutlined, ArrowDownOutlined, StarOutlined
 } from '@ant-design/icons';
 import { statsApi } from '../api/bankApi';
 
@@ -14,8 +14,11 @@ export default function Statistics() {
   const [totalBalance, setTotalBalance] = useState(null);
   const [topCustomers, setTopCustomers] = useState([]);
   const [interTxns, setInterTxns] = useState([]);
+  const [depositTxns, setDepositTxns] = useState([]);
+  const [withdrawTxns, setWithdrawTxns] = useState([]);
   const [multiBranch, setMultiBranch] = useState([]);
   const [txnSummary, setTxnSummary] = useState([]);
+  const [topDepositingCustomers, setTopDepositingCustomers] = useState([]);
   const [topLimit, setTopLimit] = useState(10);
 
   const loadTab = async (tab) => {
@@ -37,6 +40,16 @@ export default function Statistics() {
           setInterTxns(res.data.data || []);
           break;
         }
+        case 'deposit_history': {
+          const res = await statsApi.getDepositHistory();
+          setDepositTxns(res.data.data || []);
+          break;
+        }
+        case 'withdraw_history': {
+          const res = await statsApi.getWithdrawHistory();
+          setWithdrawTxns(res.data.data || []);
+          break;
+        }
         case 'multi': {
           const res = await statsApi.getMultiBranchCustomers();
           setMultiBranch(res.data.data || []);
@@ -45,6 +58,11 @@ export default function Statistics() {
         case 'summary': {
           const res = await statsApi.getTransactionSummary();
           setTxnSummary(res.data.data || []);
+          break;
+        }
+        case 'top_depositing': {
+          const res = await statsApi.getTopDepositingCustomers(topLimit);
+          setTopDepositingCustomers(res.data.data || []);
           break;
         }
       }
@@ -195,6 +213,87 @@ export default function Statistics() {
             { title: 'Tổng rút', dataIndex: 'totalWithdrawAmount', render: (v) => `${fmt(v)} ₫` },
           ]}
         />
+      ),
+    },
+    {
+      key: 'deposit_history',
+      label: <><ArrowUpOutlined /> Lịch sử gửi tiền</>,
+      children: (
+        <Table loading={loading} dataSource={depositTxns} rowKey="transactionId" pagination={{ pageSize: 10 }}
+          columns={[
+            { title: 'ID', dataIndex: 'transactionId', width: 50 },
+            {
+              title: 'Loại', dataIndex: 'transactionType',
+              render: (v) => <Tag color="green">{v}</Tag>
+            },
+            { title: 'Số tiền', dataIndex: 'amount', render: (v) => <span style={{ fontWeight: 600, color: '#52c41a' }}>+{fmt(v)} ₫</span> },
+            { title: 'Tài khoản', dataIndex: 'accountId' },
+            {
+              title: 'Trạng thái', dataIndex: 'status',
+              render: (v) => <Tag color={v === 'SUCCESS' ? 'green' : 'red'}>{v}</Tag>
+            },
+            {
+              title: 'Thời gian', dataIndex: 'createdAt',
+              render: (v) => v ? new Date(v).toLocaleString('vi-VN') : '-'
+            },
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'withdraw_history',
+      label: <><ArrowDownOutlined /> Lịch sử rút tiền</>,
+      children: (
+        <Table loading={loading} dataSource={withdrawTxns} rowKey="transactionId" pagination={{ pageSize: 10 }}
+          columns={[
+            { title: 'ID', dataIndex: 'transactionId', width: 50 },
+            {
+              title: 'Loại', dataIndex: 'transactionType',
+              render: (v) => <Tag color="red">{v}</Tag>
+            },
+            { title: 'Số tiền', dataIndex: 'amount', render: (v) => <span style={{ fontWeight: 600, color: '#ff4d4f' }}>-{fmt(v)} ₫</span> },
+            { title: 'Tài khoản', dataIndex: 'accountId' },
+            {
+              title: 'Trạng thái', dataIndex: 'status',
+              render: (v) => <Tag color={v === 'SUCCESS' ? 'green' : 'red'}>{v}</Tag>
+            },
+            {
+              title: 'Thời gian', dataIndex: 'createdAt',
+              render: (v) => v ? new Date(v).toLocaleString('vi-VN') : '-'
+            },
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'top_depositing',
+      label: <><StarOutlined /> Top KH gửi tiền</>,
+      children: (
+        <>
+          <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Text>Số lượng:</Text>
+            <InputNumber min={1} max={50} value={topLimit} onChange={setTopLimit} />
+            <Button icon={<ReloadOutlined />} onClick={() => loadTab('top_depositing')}>Tải</Button>
+          </div>
+          <Table loading={loading} dataSource={topDepositingCustomers} rowKey="customerId" pagination={false}
+            columns={[
+              {
+                title: '#', key: 'rank', render: (_, __, i) => {
+                  const medals = ['🥇', '🥈', '🥉'];
+                  return i < 3 ? <span style={{ fontSize: 20 }}>{medals[i]}</span> : i + 1;
+                }
+              },
+              { title: 'ID', dataIndex: 'customerId' },
+              { title: 'Họ tên', dataIndex: 'fullName', render: (v) => <strong>{v}</strong> },
+              { title: 'Chi nhánh', dataIndex: 'branchId', render: (v) => <Tag color="blue">{v}</Tag> },
+              {
+                title: 'Tổng tiền gửi', dataIndex: 'totalAmount',
+                render: (v) => <span style={{ fontWeight: 700, color: '#52c41a' }}>{fmt(v)} ₫</span>
+              },
+              { title: 'Số GD gửi', dataIndex: 'transactionCount' },
+            ]}
+          />
+        </>
       ),
     },
   ];

@@ -20,16 +20,8 @@ repositories {
 }
 
 dependencies {
-
-    // Spring Boot Web — REST API
     implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // Spring Boot JDBC — JdbcTemplate
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-
-    // MySQL Connector
     runtimeOnly 'com.mysql:mysql-connector-j'
-
-    // Tự restart khi save code
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }

@@ -47,15 +47,7 @@ public class TransferService {
                 this.txnLogger = txnLogger;
         }
 
-        // ============================================================
-        // KIỂM TRA TÀI KHOẢN ACTIVE
-        // ============================================================
-
-        /**
-         * Kiểm tra tài khoản có ACTIVE không.
-         * 
-         * @param label nhãn (Source / Dest) để in log rõ ràng
-         */
+        // check active
         private void checkAccountActive(JdbcTemplate jdbc, Long accountId, String label) {
                 String status = jdbc.queryForObject(
                                 "SELECT status FROM account WHERE account_id = ?",
@@ -71,16 +63,9 @@ public class TransferService {
                 }
         }
 
-        // ============================================================
-        // CHUYỂN TIỀN CÙNG CHI NHÁNH (Internal Transfer)
-        // Giao dịch LOCAL — chỉ 1 site, 1 database transaction
-        // ============================================================
-
         public TransferResultResponse internalTransfer(InternalTransferRequest request) {
 
-                // =========================
-                // KIỂM TRA DỮ LIỆU ĐẦU VÀO
-                // =========================
+                // validate
                 if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
                         throw new IllegalArgumentException("Số tiền chuyển phải lớn hơn 0");
                 }
@@ -855,7 +840,8 @@ public class TransferService {
                                                 "INSERT INTO transaction_history " +
                                                                 "(transaction_type, amount, account_id, " +
                                                                 "related_account_id, related_branch_id, " +
-                                                                "balance_after, status, distributed_txn_id, description) " +
+                                                                "balance_after, status, distributed_txn_id, description) "
+                                                                +
                                                                 "VALUES ('INTER_BRANCH_OUT', ?, ?, ?, ?, ?, 'FAILED', ?, ?)",
 
                                                 request.getAmount(),
@@ -878,7 +864,8 @@ public class TransferService {
                                                 "INSERT INTO transaction_history " +
                                                                 "(transaction_type, amount, account_id, " +
                                                                 "related_account_id, related_branch_id, " +
-                                                                "balance_after, status, distributed_txn_id, description) " +
+                                                                "balance_after, status, distributed_txn_id, description) "
+                                                                +
                                                                 "VALUES ('INTER_BRANCH_IN', ?, ?, ?, ?, ?, 'FAILED', ?, ?)",
 
                                                 request.getAmount(),
