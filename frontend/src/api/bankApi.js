@@ -22,7 +22,6 @@ export const customerApi = {
   getById: (id, branch) => API.get(`/customers/${id}?branch=${branch}`),
   create: (data) => API.post('/customers', data),
   update: (id, data) => API.put(`/customers/${id}`, data),
-  delete: (id, branch) => API.delete(`/customers/${id}?branch=${branch}`),
 };
 
 // ============================================================

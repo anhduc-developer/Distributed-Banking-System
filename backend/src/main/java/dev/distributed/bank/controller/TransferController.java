@@ -32,7 +32,8 @@ public class TransferController {
         if ("SUCCESS".equals(result.getStatus())) {
             return ApiResponse.ok("Inter-branch transfer committed (2PC)", result);
         } else {
-            return ApiResponse.error(result.getMessage());
+            // Trả về data kể cả khi thất bại để frontend hiển thị từng bước
+            return new ApiResponse<>(false, result.getMessage(), result);
         }
     }
 }

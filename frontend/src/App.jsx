@@ -1,14 +1,12 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import AppLayout from './components/AppLayout';
-import Dashboard from './pages/Dashboard';
-import Branches from './pages/Branches';
-import Customers from './pages/Customers';
-import Accounts from './pages/Accounts';
-import Transactions from './pages/Transactions';
-import Transfers from './pages/Transfers';
-import Statistics from './pages/Statistics';
-import Demo from './pages/Demo';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import AppLayout from "./components/AppLayout";
+import Dashboard from "./pages/Dashboard";
+import Branches from "./pages/Branches";
+import Customers from "./pages/Customers";
+import Accounts from "./pages/Accounts";
+import Transactions from "./pages/Transactions";
+import Transfers from "./pages/Transfers";
+import Statistics from "./pages/Statistics";
 
 function App() {
   return (
@@ -23,7 +21,6 @@ function App() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="transfers" element={<Transfers />} />
           <Route path="statistics" element={<Statistics />} />
-          <Route path="demo" element={<Demo />} />
         </Route>
       </Routes>
     </BrowserRouter>

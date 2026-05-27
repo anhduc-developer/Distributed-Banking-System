@@ -48,16 +48,6 @@ export default function Customers() {
     setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await customerApi.delete(id, branch);
-      message.success('Xóa thành công!');
-      loadCustomers();
-    } catch (err) {
-      message.error('Lỗi xóa: ' + (err.response?.data?.message || err.message));
-    }
-  };
-
   const columns = [
     { title: 'ID', dataIndex: 'customerId', key: 'id', width: 60 },
     { title: 'Họ tên', dataIndex: 'fullName', key: 'name', render: (v) => <strong>{v}</strong> },
@@ -73,9 +63,6 @@ export default function Customers() {
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-          <Popconfirm title="Xóa khách hàng này?" onConfirm={() => handleDelete(record.customerId)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
         </Space>
       ),
     },

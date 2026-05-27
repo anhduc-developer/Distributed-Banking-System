@@ -18,27 +18,67 @@ public class TransactionStatsResponse {
 
     // Getters & Setters
 
-    public String getBranchId() { return branchId; }
-    public void setBranchId(String branchId) { this.branchId = branchId; }
+    public String getBranchId() {
+        return branchId;
+    }
 
-    public String getBranchName() { return branchName; }
-    public void setBranchName(String branchName) { this.branchName = branchName; }
+    public void setBranchId(String branchId) {
+        this.branchId = branchId;
+    }
 
-    public long getTotalTransactions() { return totalTransactions; }
-    public void setTotalTransactions(long totalTransactions) { this.totalTransactions = totalTransactions; }
+    public String getBranchName() {
+        return branchName;
+    }
 
-    public long getDepositCount() { return depositCount; }
-    public void setDepositCount(long depositCount) { this.depositCount = depositCount; }
+    public void setBranchName(String branchName) {
+        this.branchName = branchName;
+    }
 
-    public long getWithdrawCount() { return withdrawCount; }
-    public void setWithdrawCount(long withdrawCount) { this.withdrawCount = withdrawCount; }
+    public long getTotalTransactions() {
+        return totalTransactions;
+    }
 
-    public long getTransferCount() { return transferCount; }
-    public void setTransferCount(long transferCount) { this.transferCount = transferCount; }
+    public void setTotalTransactions(long totalTransactions) {
+        this.totalTransactions = totalTransactions;
+    }
 
-    public BigDecimal getTotalDepositAmount() { return totalDepositAmount; }
-    public void setTotalDepositAmount(BigDecimal totalDepositAmount) { this.totalDepositAmount = totalDepositAmount; }
+    public long getDepositCount() {
+        return depositCount;
+    }
 
-    public BigDecimal getTotalWithdrawAmount() { return totalWithdrawAmount; }
-    public void setTotalWithdrawAmount(BigDecimal totalWithdrawAmount) { this.totalWithdrawAmount = totalWithdrawAmount; }
+    public void setDepositCount(long depositCount) {
+        this.depositCount = depositCount;
+    }
+
+    public long getWithdrawCount() {
+        return withdrawCount;
+    }
+
+    public void setWithdrawCount(long withdrawCount) {
+        this.withdrawCount = withdrawCount;
+    }
+
+    public long getTransferCount() {
+        return transferCount;
+    }
+
+    public void setTransferCount(long transferCount) {
+        this.transferCount = transferCount;
+    }
+
+    public BigDecimal getTotalDepositAmount() {
+        return totalDepositAmount;
+    }
+
+    public void setTotalDepositAmount(BigDecimal totalDepositAmount) {
+        this.totalDepositAmount = totalDepositAmount;
+    }
+
+    public BigDecimal getTotalWithdrawAmount() {
+        return totalWithdrawAmount;
+    }
+
+    public void setTotalWithdrawAmount(BigDecimal totalWithdrawAmount) {
+        this.totalWithdrawAmount = totalWithdrawAmount;
+    }
 }

@@ -445,12 +445,15 @@ public class AccountService {
 
         JdbcTemplate jdbc = siteRouter.getJdbcTemplate(branchId);
 
+        // =========================
+        // KIỂM TRA DỮ LIỆU ĐẦU VÀO
+        // =========================
         if (amountThread1 == null || amountThread1.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount Thread 1 phải > 0");
+            throw new IllegalArgumentException("Số tiền Thread 1 phải lớn hơn 0");
         }
 
         if (amountThread2 == null || amountThread2.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount Thread 2 phải > 0");
+            throw new IllegalArgumentException("Số tiền Thread 2 phải lớn hơn 0");
         }
 
         checkAccountActive(jdbc, accountId);
@@ -461,6 +464,9 @@ public class AccountService {
 
         ConcurrentWithdrawResponse response = new ConcurrentWithdrawResponse();
 
+        // =========================
+        // LẤY SỐ DƯ BAN ĐẦU
+        // =========================
         BigDecimal initialBalance = jdbc.queryForObject(
                 "SELECT balance FROM account WHERE account_id = ?",
                 BigDecimal.class,
@@ -471,39 +477,50 @@ public class AccountService {
         String mode;
 
         if (useLock) {
-            mode = "WITH LOCK (SELECT FOR UPDATE)";
+            mode = "CÓ LOCK";
         } else {
-            mode = "WITHOUT LOCK (Lost Update possible)";
+            mode = "KHÔNG LOCK";
         }
 
+        // =========================
+        // IN THÔNG TIN BAN ĐẦU
+        // =========================
         System.out.println();
-        System.out.println("══════════════════════════════════════════════");
-        System.out.println("[CONCURRENT WITHDRAW] " + mode);
-        System.out.println("Account: " + accountId);
-        System.out.println("Branch : " + branchId);
-        System.out.println("Initial Balance: " + initialBalance);
-        System.out.println("T1 Withdraw: " + amountThread1);
-        System.out.println("T2 Withdraw: " + amountThread2);
-        System.out.println("Total Withdraw: " + totalWithdraw);
-        System.out.println("══════════════════════════════════════════════");
 
-        logs.add("[START] Concurrent Withdraw");
-        logs.add("Mode = " + mode);
-        logs.add("Initial Balance = " + initialBalance);
+        System.out.println("==========================================");
+        System.out.println("MÔ PHỎNG RÚT TIỀN ĐỒNG THỜI");
+        System.out.println("==========================================");
+
+        System.out.println("Tài khoản          : " + accountId);
+        System.out.println("Chi nhánh          : " + branchId);
+        System.out.println("Chế độ             : " + mode);
+        System.out.println("Số dư ban đầu      : " + initialBalance);
+        System.out.println("Thread 1 rút       : " + amountThread1);
+        System.out.println("Thread 2 rút       : " + amountThread2);
+        System.out.println("Tổng tiền rút      : " + totalWithdraw);
+
+        System.out.println("==========================================");
+
+        logs.add("BẮT ĐẦU RÚT TIỀN ĐỒNG THỜI");
+        logs.add("Chế độ = " + mode);
+        logs.add("Số dư ban đầu = " + initialBalance);
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
 
-        // Cho 2 thread start cùng lúc
+        // Cho 2 thread chạy cùng lúc
         CountDownLatch startLatch = new CountDownLatch(1);
 
-        // Cho 2 thread đọc xong mới được write
+        // Đợi cả 2 thread đọc xong mới update
         CyclicBarrier readBarrier = new CyclicBarrier(2);
 
         List<Future<String>> futures = new ArrayList<>();
 
+        // =========================
+        // THREAD 1
+        // =========================
         futures.add(executor.submit(() -> {
 
-            logs.add("[T1] Ready");
+            logs.add("[T1] ĐÃ SẴN SÀNG");
 
             startLatch.await();
 
@@ -528,9 +545,12 @@ public class AccountService {
             }
         }));
 
+        // =========================
+        // THREAD 2
+        // =========================
         futures.add(executor.submit(() -> {
 
-            logs.add("[T2] Ready");
+            logs.add("[T2] ĐÃ SẴN SÀNG");
 
             startLatch.await();
 
@@ -555,27 +575,40 @@ public class AccountService {
             }
         }));
 
+        // Cho cả 2 thread bắt đầu chạy
         startLatch.countDown();
 
         String resultThread1 = "TIMEOUT";
         String resultThread2 = "TIMEOUT";
 
+        // =========================
+        // LẤY KẾT QUẢ THREAD 1
+        // =========================
         try {
+
             resultThread1 = futures.get(0).get(15, TimeUnit.SECONDS);
+
         } catch (Exception e) {
+
             logs.add("[T1] ERROR: " + e.getMessage());
         }
 
+        // =========================
+        // LẤY KẾT QUẢ THREAD 2
+        // =========================
         try {
+
             resultThread2 = futures.get(1).get(15, TimeUnit.SECONDS);
+
         } catch (Exception e) {
+
             logs.add("[T2] ERROR: " + e.getMessage());
         }
 
         executor.shutdown();
 
         // =========================
-        // LẤY BALANCE CUỐI
+        // LẤY SỐ DƯ CUỐI
         // =========================
         BigDecimal finalBalance = jdbc.queryForObject(
                 "SELECT balance FROM account WHERE account_id = ?",
@@ -583,7 +616,7 @@ public class AccountService {
                 accountId);
 
         // =========================
-        // TÍNH BALANCE ĐÚNG
+        // TÍNH SỐ DƯ ĐÚNG
         // =========================
         BigDecimal expectedBalance = initialBalance;
 
@@ -605,47 +638,53 @@ public class AccountService {
         }
 
         // =========================
-        // LOG KẾT QUẢ
+        // GHI LOG KẾT QUẢ
         // =========================
-        logs.add("══════════════════════════════");
-        logs.add("Expected Balance = " + expectedBalance);
-        logs.add("Actual Balance   = " + finalBalance);
+        logs.add("================================");
+        logs.add("Số dư mong đợi = " + expectedBalance);
+        logs.add("Số dư thực tế  = " + finalBalance);
 
         if (lostUpdate) {
 
-            logs.add("LOST UPDATE DETECTED!");
+            logs.add("PHÁT HIỆN LOST UPDATE");
 
             BigDecimal diff = finalBalance.subtract(expectedBalance);
 
-            logs.add("Difference = " + diff);
+            logs.add("Chênh lệch = " + diff);
 
             logs.add("Một transaction đã bị ghi đè");
 
         } else {
 
-            logs.add("Balance chính xác");
+            logs.add("Dữ liệu chính xác");
         }
 
         // =========================
-        // IN CONSOLE
+        // IN KẾT QUẢ RA CONSOLE
         // =========================
-        System.out.println("──────────────────────────────");
-        System.out.println("Expected Balance: " + expectedBalance);
-        System.out.println("Actual Balance  : " + finalBalance);
+        System.out.println("------------------------------------------");
+
+        System.out.println("Số dư mong đợi : " + expectedBalance);
+        System.out.println("Số dư thực tế  : " + finalBalance);
 
         if (lostUpdate) {
-            System.out.println("LOST UPDATE DETECTED!");
+
+            System.out.println("PHÁT HIỆN LOST UPDATE");
+
         } else {
-            System.out.println("Balance chính xác");
+
+            System.out.println("DỮ LIỆU CHÍNH XÁC");
         }
 
-        System.out.println("══════════════════════════════════════════════");
+        System.out.println("==========================================");
+
         System.out.println();
 
         // =========================
         // BUILD RESPONSE
         // =========================
-        response.setAccount(getAccountById(accountId, branchId));
+        response.setAccount(
+                getAccountById(accountId, branchId));
 
         response.setFinalBalance(finalBalance);
 
@@ -666,64 +705,99 @@ public class AccountService {
      * Rút tiền CÓ LOCK (SELECT FOR UPDATE) — trong 1 thread.
      * Thread phải đợi lock → đọc balance đúng → check đúng → kết quả đúng.
      */
-    private String withdrawWithLock(String branchId, Long accountId,
-            BigDecimal amount, int threadNum, List<String> logs) {
+    /**
+     * Rút tiền CÓ LOCK (SELECT FOR UPDATE)
+     * Thread phải chờ lock rồi mới được đọc dữ liệu.
+     */
+    private String withdrawWithLock(
+            String branchId,
+            Long accountId,
+            BigDecimal amount,
+            int threadNum,
+            List<String> logs) {
+
         String tag = "[T" + threadNum + "]";
+
         PlatformTransactionManager txManager = siteRouter.getTransactionManager(branchId);
+
         TransactionStatus txStatus = txManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
+
             JdbcTemplate threadJdbc = siteRouter.getJdbcTemplate(branchId);
 
-            logs.add(tag + " 🔒 Đang chờ lock (SELECT FOR UPDATE)...");
-            System.out.println("   " + tag + " 🔒 Đang chờ lock...");
+            logs.add(tag + " Đang chờ lock...");
 
-            // ⭐ PESSIMISTIC LOCK: SELECT FOR UPDATE
+            System.out.println(tag + " Đang chờ lock...");
+
+            // LOCK DỮ LIỆU BẰNG SELECT FOR UPDATE
             BigDecimal balance = threadJdbc.queryForObject(
                     "SELECT balance FROM account WHERE account_id = ? FOR UPDATE",
-                    BigDecimal.class, accountId);
+                    BigDecimal.class,
+                    accountId);
 
-            logs.add(tag + " ✅ Đã lock, balance = " + balance);
-            System.out.println("   " + tag + " ✅ Acquired lock, balance = " + balance);
+            logs.add(tag + " Đã lock thành công");
+            logs.add(tag + " Balance hiện tại = " + balance);
 
-            // Kiểm tra số dư
+            System.out.println(tag + " Đã lock thành công");
+            System.out.println(tag + " Balance hiện tại = " + balance);
+
+            // Kiểm tra đủ tiền không
             if (balance.compareTo(amount) < 0) {
+
                 txManager.rollback(txStatus);
-                String msg = tag + " ❌ FAILED: Không đủ tiền (" + balance + " < " + amount + ")";
+
+                String msg = tag + " THẤT BẠI - Không đủ tiền";
+
                 logs.add(msg);
-                System.out.println("   " + msg);
+
+                System.out.println(msg);
+
                 return "FAILED";
             }
 
             // Trừ tiền
             threadJdbc.update(
                     "UPDATE account SET balance = balance - ? WHERE account_id = ?",
-                    amount, accountId);
+                    amount,
+                    accountId);
 
             BigDecimal newBalance = balance.subtract(amount);
 
-            // Ghi lịch sử
+            // Ghi lịch sử giao dịch
             threadJdbc.update(
-                    "INSERT INTO transaction_history (transaction_type, amount, account_id, balance_after, status, description) "
-                            +
+                    "INSERT INTO transaction_history " +
+                            "(transaction_type, amount, account_id, balance_after, status, description) " +
                             "VALUES ('WITHDRAW', ?, ?, ?, 'SUCCESS', ?)",
-                    amount, accountId, newBalance,
-                    "Rút tiền concurrent WITH LOCK [T" + threadNum + "]");
+                    amount,
+                    accountId,
+                    newBalance,
+                    "Rút tiền concurrent có lock");
 
             txManager.commit(txStatus);
 
-            String msg = tag + " 💰 SUCCESS: rút " + amount + " → balance = " + newBalance + " — COMMITTED";
+            String msg = tag + " Rút tiền thành công";
+
             logs.add(msg);
-            System.out.println("   " + tag + " 💰 Rút " + amount +
-                    " → balance = " + newBalance + " ✓ COMMITTED");
+            logs.add(tag + " Balance mới = " + newBalance);
+
+            System.out.println(msg);
+            System.out.println(tag + " Balance mới = " + newBalance);
 
             return "SUCCESS";
+
         } catch (Exception e) {
-            if (!txStatus.isCompleted())
+
+            if (!txStatus.isCompleted()) {
                 txManager.rollback(txStatus);
-            String msg = tag + " ❌ ERROR: " + e.getMessage();
+            }
+
+            String msg = tag + " ERROR: " + e.getMessage();
+
             logs.add(msg);
-            System.out.println("   " + msg);
+
+            System.out.println(msg);
+
             return "ERROR";
         }
     }
@@ -737,76 +811,107 @@ public class AccountService {
      *
      * Dùng readBarrier để đảm bảo cả 2 thread ĐỌC XONG rồi mới WRITE.
      */
-    private String withdrawWithoutLock(String branchId, Long accountId,
-            BigDecimal amount, int threadNum,
-            List<String> logs, CyclicBarrier readBarrier) {
+    /**
+     * Rút tiền KHÔNG LOCK
+     *
+     * Cả 2 thread đọc cùng lúc nên có thể xảy ra LOST UPDATE.
+     */
+    private String withdrawWithoutLock(
+            String branchId,
+            Long accountId,
+            BigDecimal amount,
+            int threadNum,
+            List<String> logs,
+            CyclicBarrier readBarrier) {
+
         String tag = "[T" + threadNum + "]";
 
         try {
+
             JdbcTemplate threadJdbc = siteRouter.getJdbcTemplate(branchId);
 
-            logs.add(tag + " ⚠️ Đọc balance KHÔNG LOCK...");
-            System.out.println("   " + tag + " ⚠️ Đọc balance KHÔNG LOCK...");
+            logs.add(tag + " Đọc balance KHÔNG LOCK");
 
-            // ⚠️ KHÔNG CÓ FOR UPDATE → không lock → cả 2 thread đọc cùng lúc
+            System.out.println(tag + " Đọc balance KHÔNG LOCK");
+
+            // KHÔNG DÙNG FOR UPDATE
             BigDecimal balance = threadJdbc.queryForObject(
                     "SELECT balance FROM account WHERE account_id = ?",
-                    BigDecimal.class, accountId);
+                    BigDecimal.class,
+                    accountId);
 
-            logs.add(tag + " Đọc balance = " + balance + " (NO LOCK)");
-            System.out.println("   " + tag + " 📖 Đọc balance = " + balance + " (NO LOCK)");
+            logs.add(tag + " Balance đọc được = " + balance);
 
-            // ⭐ ĐỢI THREAD KIA ĐỌC XONG → đảm bảo cả 2 đều đọc CÙNG giá trị
-            // trước khi bất kỳ thread nào bắt đầu WRITE
+            System.out.println(tag + " Balance đọc được = " + balance);
+
+            // Đợi cả 2 thread đọc xong
             readBarrier.await(5, TimeUnit.SECONDS);
 
-            // Kiểm tra số dư (CÓ check — nhưng cả 2 thread đọc cùng giá trị nên cả 2 đều
-            // pass)
+            // Kiểm tra số dư
             if (balance.compareTo(amount) < 0) {
-                String msg = tag + " ❌ FAILED: Không đủ tiền (" + balance + " < " + amount + ")";
+
+                String msg = tag + " THẤT BẠI - Không đủ tiền";
+
                 logs.add(msg);
-                System.out.println("   " + msg);
+
+                System.out.println(msg);
+
                 return "FAILED";
             }
 
-            // ⚠️ LOST UPDATE PATTERN (Read → Compute in App → Write)
-            // Cả 2 thread đọc CÙNG balance (ví dụ 1,000,000)
-            // Mỗi thread tự tính: newBalance = balance_đọc_được - amount
-            // T1: 1,000,000 - 600,000 = 400,000 → SET balance = 400,000
-            // T2: 1,000,000 - 600,000 = 400,000 → SET balance = 400,000
-            // Thread ghi SAU sẽ GHI ĐÈ thread ghi trước!
-            // → Kết quả: balance = 400,000 (chỉ trừ 1 lần thay vì 2 lần)
-            // → Expected: 1,000,000 - 600,000 - 600,000 = -200,000
-            // → Actual: 400,000 → MỘT GIAO DỊCH BỊ MẤT!
+            /*
+             * LOST UPDATE:
+             *
+             * Thread 1 đọc balance = 1,000,000
+             * Thread 2 cũng đọc balance = 1,000,000
+             *
+             * Cả 2 cùng tính toán balance mới.
+             *
+             * Thread ghi sau sẽ ghi đè thread ghi trước.
+             */
+
             BigDecimal newBalance = balance.subtract(amount);
 
             threadJdbc.update(
                     "UPDATE account SET balance = ? WHERE account_id = ?",
-                    newBalance, accountId);
+                    newBalance,
+                    accountId);
 
             // Ghi lịch sử
             threadJdbc.update(
-                    "INSERT INTO transaction_history (transaction_type, amount, account_id, balance_after, status, description) "
-                            +
+                    "INSERT INTO transaction_history " +
+                            "(transaction_type, amount, account_id, balance_after, status, description) " +
                             "VALUES ('WITHDRAW', ?, ?, ?, 'SUCCESS', ?)",
-                    amount, accountId, newBalance,
-                    "Rút tiền concurrent NO LOCK [T" + threadNum + "]");
+                    amount,
+                    accountId,
+                    newBalance,
+                    "Rút tiền concurrent không lock");
 
-            String msg = tag + " 💰 SUCCESS: rút " + amount +
-                    " (đọc balance=" + balance + ", balance SAU UPDATE=" + newBalance + ") → COMMITTED";
+            String msg = tag + " Rút tiền thành công";
+
             logs.add(msg);
-            System.out.println("   " + tag + " 💰 Rút " + amount +
-                    " (đọc balance=" + balance + " → balance sau UPDATE=" + newBalance + ") COMMITTED");
+
+            logs.add(tag + " Balance đọc được = " + balance);
+            logs.add(tag + " Balance sau update = " + newBalance);
+
+            System.out.println(msg);
+
+            System.out.println(tag + " Balance đọc được = " + balance);
+            System.out.println(tag + " Balance sau update = " + newBalance);
 
             return "SUCCESS";
+
         } catch (Exception e) {
-            String msg = tag + " ❌ ERROR: " + e.getMessage();
+
+            String msg = tag + " ERROR: " + e.getMessage();
+
             logs.add(msg);
-            System.out.println("   " + msg);
+
+            System.out.println(msg);
+
             return "ERROR";
         }
     }
-
     // ============================================================
     // LỊCH SỬ GIAO DỊCH
     // ============================================================

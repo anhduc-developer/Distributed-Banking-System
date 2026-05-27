@@ -21,10 +21,5 @@ public class BankApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(BankApplication.class, args);
-        System.out.println("================================================");
-        System.out.println("  🏦 Distributed Banking System STARTED");
-        System.out.println("  📍 Coordinator running at http://localhost:8080");
-        System.out.println("  📊 Sites: HANOI(3307) | DANANG(3308) | HCM(3309)");
-        System.out.println("================================================");
     }
 }

@@ -1,6 +1,5 @@
-import React from 'react';
-import { Layout, Menu } from 'antd';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Layout, Menu } from "antd";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   DashboardOutlined,
   BankOutlined,
@@ -9,32 +8,33 @@ import {
   DollarOutlined,
   SwapOutlined,
   BarChartOutlined,
-  ExperimentOutlined,
-} from '@ant-design/icons';
+  GithubOutlined,
+} from "@ant-design/icons";
 
-const { Sider, Content, Header } = Layout;
+const { Sider, Content } = Layout;
 
 const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/branches', icon: <BankOutlined />, label: 'Chi nhánh' },
-  { key: '/customers', icon: <UserOutlined />, label: 'Khách hàng' },
-  { key: '/accounts', icon: <CreditCardOutlined />, label: 'Tài khoản' },
-  { key: '/transactions', icon: <DollarOutlined />, label: 'Gửi / Rút tiền' },
-  { key: '/transfers', icon: <SwapOutlined />, label: 'Chuyển tiền' },
-  { key: '/statistics', icon: <BarChartOutlined />, label: 'Thống kê' },
-  { key: '/demo', icon: <ExperimentOutlined />, label: 'Demo & Test' },
+  { key: "/dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
+  { key: "/branches", icon: <BankOutlined />, label: "Chi nhánh" },
+  { key: "/customers", icon: <UserOutlined />, label: "Khách hàng" },
+  { key: "/accounts", icon: <CreditCardOutlined />, label: "Tài khoản" },
+  { key: "/transactions", icon: <DollarOutlined />, label: "Gửi / Rút tiền" },
+  { key: "/transfers", icon: <SwapOutlined />, label: "Chuyển tiền" },
+  { key: "/statistics", icon: <BarChartOutlined />, label: "Thống kê" },
 ];
-
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={240} style={{ position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 100 }}>
+    <Layout style={{ minHeight: "100vh" }}>
+      <Sider
+        width={240}
+        style={{ position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100 }}
+      >
         <div className="sidebar-logo">
-          <BankOutlined className="logo-icon" />
-          <span>PTIT Bank</span>
+          <GithubOutlined className="logo-icon" />
+          <span>MAI ANH DUC</span>
         </div>
         <Menu
           theme="dark"
@@ -44,10 +44,17 @@ export default function AppLayout() {
           onClick={({ key }) => navigate(key)}
           style={{ borderRight: 0, marginTop: 8 }}
         />
-        <div style={{
-          position: 'absolute', bottom: 16, left: 0, right: 0,
-          textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 11
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: 16,
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            color: "rgba(255,255,255,0.3)",
+            fontSize: 11,
+          }}
+        >
           Distributed Banking v1.0
         </div>
       </Sider>
