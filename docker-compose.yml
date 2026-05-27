@@ -1,0 +1,94 @@
+# ================================================================
+# DOCKER COMPOSE — 3 MySQL instances (3 chi nhánh ngân hàng)
+#
+# Mỗi MySQL đại diện cho 1 SITE trong hệ thống phân tán:
+#   - mysql-hanoi  (port 3307) → bank_hanoi
+#   - mysql-danang (port 3308) → bank_danang
+#   - mysql-hcm    (port 3309) → bank_hcm
+#
+# Chạy: docker-compose up -d
+# Dừng: docker-compose down
+# Xoá data: docker-compose down -v
+# ================================================================
+
+services:
+
+  # ============================================================
+  # SITE 1: MySQL — Chi nhánh Hà Nội
+  # Host port 3307 → Container port 3306
+  # ============================================================
+  mysql-hanoi:
+    image: mysql:8
+    container_name: mysql-hanoi
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank_hanoi
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3307:3306"
+    volumes:
+      # File SQL này tự chạy khi MySQL khởi động lần đầu
+      - ./docker/init-hanoi.sql:/docker-entrypoint-initdb.d/init.sql
+      # Named volume giữ data khi restart container
+      - mysql-hanoi-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================================
+  # SITE 2: MySQL — Chi nhánh Đà Nẵng
+  # Host port 3308 → Container port 3306
+  # ============================================================
+  mysql-danang:
+    image: mysql:8
+    container_name: mysql-danang
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank_danang
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3308:3306"
+    volumes:
+      - ./docker/init-danang.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-danang-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================================
+  # SITE 3: MySQL — Chi nhánh TP.HCM
+  # Host port 3309 → Container port 3306
+  # ============================================================
+  mysql-hcm:
+    image: mysql:8
+    container_name: mysql-hcm
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bank_hcm
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3309:3306"
+    volumes:
+      - ./docker/init-hcm.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-hcm-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# Named volumes: giữ data MySQL không bị mất khi restart container
+volumes:
+  mysql-hanoi-data:
+  mysql-danang-data:
+  mysql-hcm-data:

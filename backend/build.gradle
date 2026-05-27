@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'dev.distributed'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = '17'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add('-parameters')
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web — REST API
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Boot JDBC — JdbcTemplate (KHÔNG dùng JPA)
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // MySQL Connector
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
