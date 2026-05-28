@@ -6,7 +6,7 @@
 -- ================================================================
 
 USE bank_hcm;
-
+SET NAMES utf8mb4;
 -- BẢNG 1: branch
 CREATE TABLE IF NOT EXISTS branch (
     branch_id   VARCHAR(10)  PRIMARY KEY,

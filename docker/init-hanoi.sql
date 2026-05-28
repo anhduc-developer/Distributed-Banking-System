@@ -8,7 +8,7 @@
 -- ================================================================
 
 USE bank_hanoi;
-
+SET NAMES utf8mb4;
 -- ================================================================
 -- BẢNG 1: branch — Thông tin chi nhánh
 -- Mỗi site chỉ có 1 record (chi nhánh mình)
