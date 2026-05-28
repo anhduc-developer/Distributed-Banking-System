@@ -13,10 +13,11 @@ public class BalanceResponse {
     private String customerName;
     private String status;
 
-    public BalanceResponse() {}
+    public BalanceResponse() {
+    }
 
     public BalanceResponse(Long accountId, String branchId, BigDecimal balance,
-                           String customerName, String status) {
+            String customerName, String status) {
         this.accountId = accountId;
         this.branchId = branchId;
         this.balance = balance;
@@ -24,18 +25,43 @@ public class BalanceResponse {
         this.status = status;
     }
 
-    public Long getAccountId() { return accountId; }
-    public void setAccountId(Long accountId) { this.accountId = accountId; }
+    public Long getAccountId() {
+        return accountId;
+    }
 
-    public String getBranchId() { return branchId; }
-    public void setBranchId(String branchId) { this.branchId = branchId; }
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
 
-    public BigDecimal getBalance() { return balance; }
-    public void setBalance(BigDecimal balance) { this.balance = balance; }
+    public String getBranchId() {
+        return branchId;
+    }
 
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public void setBranchId(String branchId) {
+        this.branchId = branchId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public BigDecimal getBalance() {
+        return balance;
+    }
+
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

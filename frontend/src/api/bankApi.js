@@ -80,6 +80,7 @@ export const demoApi = {
   concurrentWithdrawNoLock: (branch, accountId, amount) =>
     API.post('/demo/concurrent-withdraw-no-lock', { branch, accountId, amount }),
   getDistributedTxnLogs: () => API.get('/demo/distributed-txn-logs'),
+  deadlock: (data) => API.post('/demo/deadlock', data, { timeout: 30000 }),
 };
 
 export default API;

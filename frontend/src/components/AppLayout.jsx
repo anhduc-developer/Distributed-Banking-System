@@ -9,6 +9,7 @@ import {
   SwapOutlined,
   BarChartOutlined,
   StarOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content } = Layout;
@@ -21,6 +22,7 @@ const menuItems = [
   { key: "/transactions", icon: <DollarOutlined />, label: "Gửi / Rút tiền" },
   { key: "/transfers", icon: <SwapOutlined />, label: "Chuyển tiền" },
   { key: "/statistics", icon: <BarChartOutlined />, label: "Thống kê" },
+  { key: "/deadlock-demo", icon: <ThunderboltOutlined />, label: "Demo Deadlock" },
 ];
 export default function AppLayout() {
   const navigate = useNavigate();
