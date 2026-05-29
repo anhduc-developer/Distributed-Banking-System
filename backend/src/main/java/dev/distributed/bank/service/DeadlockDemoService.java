@@ -232,11 +232,13 @@ public class DeadlockDemoService {
                                                         BigDecimal.class, accountAId);
                                         jdbc.update(
                                                         "INSERT INTO transaction_history " +
-                                                                        "(transaction_type, amount, account_id, related_account_id, balance_after, status, description) " +
+                                                                        "(transaction_type, amount, account_id, related_account_id, balance_after, status, description) "
+                                                                        +
                                                                         "VALUES ('TRANSFER_OUT', ?, ?, ?, ?, 'FAILED', ?)",
                                                         amountAtoB, accountAId, accountBId, currentBalanceA,
                                                         "Deadlock victim: giao dịch bị MySQL rollback");
-                                } catch (Exception ignored) {}
+                                } catch (Exception ignored) {
+                                }
 
                         } catch (Exception e) {
                                 addLog(combinedLogs, thread1Logs, null, "THREAD-1",
@@ -385,11 +387,13 @@ public class DeadlockDemoService {
                                                         BigDecimal.class, accountBId);
                                         jdbc.update(
                                                         "INSERT INTO transaction_history " +
-                                                                        "(transaction_type, amount, account_id, related_account_id, balance_after, status, description) " +
+                                                                        "(transaction_type, amount, account_id, related_account_id, balance_after, status, description) "
+                                                                        +
                                                                         "VALUES ('TRANSFER_OUT', ?, ?, ?, ?, 'FAILED', ?)",
                                                         amountBtoA, accountBId, accountAId, currentBalanceB,
                                                         "Deadlock victim: giao dịch bị MySQL rollback");
-                                } catch (Exception ignored) {}
+                                } catch (Exception ignored) {
+                                }
 
                         } catch (Exception e) {
                                 addLog(combinedLogs, thread2Logs, null, "THREAD-2",

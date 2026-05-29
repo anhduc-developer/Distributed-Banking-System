@@ -57,18 +57,37 @@ public class TransactionLogger {
 
     /**
      * Chạy SQL trên raw JDBC connection — hoàn toàn độc lập với Spring transaction.
-     * Lấy connection mới từ pool, execute, auto-commit, rồi trả lại pool.
+     *
+     * ⚠️ QUAN TRỌNG: Phải unwrap DataSource gốc (HikariDataSource) để tránh
+     * Spring trả về connection đang bị bind vào transaction hiện tại.
+     * Nếu dùng ds.getConnection() trực tiếp, Spring có thể trả về connection
+     * đang nằm trong TransactionSynchronizationManager → INSERT sẽ bị cuốn
+     * vào transaction chính và mất khi rollback.
      */
     private void executeRaw(String branchId, String sql, Object... args) {
         DataSource ds = siteRouter.getJdbcTemplate(branchId).getDataSource();
-        try (Connection conn = ds.getConnection();
+
+        // Unwrap để lấy DataSource gốc, bỏ qua Spring transaction binding
+        DataSource rawDs = ds;
+        try {
+            if (ds.isWrapperFor(javax.sql.DataSource.class)) {
+                rawDs = ds.unwrap(javax.sql.DataSource.class);
+            }
+        } catch (SQLException ignored) {
+            // Nếu unwrap không được thì dùng ds gốc
+        }
+
+        // Lấy connection MỚI hoàn toàn từ pool, không qua Spring
+        try (Connection conn = rawDs.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             conn.setAutoCommit(true);
             for (int i = 0; i < args.length; i++) {
                 ps.setObject(i + 1, args[i]);
             }
-            ps.executeUpdate();
+            int rows = ps.executeUpdate();
+            System.out.println("[TransactionLogger] Executed: " + rows + " row(s) affected | SQL: " + sql.substring(0, Math.min(sql.length(), 60)) + "...");
         } catch (SQLException e) {
+            System.out.println("[TransactionLogger] ERROR: " + e.getMessage());
             throw new RuntimeException("Failed to log transaction: " + e.getMessage(), e);
         }
     }
@@ -110,32 +129,35 @@ public class TransactionLogger {
 
     /**
      * Thêm participant vào log.
+     * Ghi vào database của sourceBranch (cùng nơi lưu distributed_transaction_log)
+     * để thoả mãn FK constraint.
      */
-    public void addParticipant(String txnId, String branchId, String role,
-                                String status, String action) {
+    public void addParticipant(String txnId, String sourceBranch, String participantBranchId,
+                                String role, String status, String action) {
         try {
-            executeRaw(branchId,
+            executeRaw(sourceBranch,
                     "INSERT INTO transaction_participant (txn_id, branch_id, role, status, action) " +
                     "VALUES (?, ?, ?, ?, ?)",
-                    txnId, branchId, role, status, action
+                    txnId, participantBranchId, role, status, action
             );
         } catch (Exception e) {
-            // Nếu site down, ghi vào site source thay thế
-            System.out.println("⚠️ Cannot log participant at " + branchId + ": " + e.getMessage());
+            System.out.println("⚠️ Cannot log participant at " + participantBranchId + ": " + e.getMessage());
         }
     }
 
     /**
      * Cập nhật status participant.
+     * Ghi vào database của sourceBranch.
      */
-    public void updateParticipantStatus(String txnId, String branchId, String newStatus) {
+    public void updateParticipantStatus(String txnId, String sourceBranch,
+                                         String participantBranchId, String newStatus) {
         try {
-            executeRaw(branchId,
+            executeRaw(sourceBranch,
                     "UPDATE transaction_participant SET status = ? WHERE txn_id = ? AND branch_id = ?",
-                    newStatus, txnId, branchId
+                    newStatus, txnId, participantBranchId
             );
         } catch (Exception e) {
-            System.out.println("⚠️ Cannot update participant at " + branchId);
+            System.out.println("⚠️ Cannot update participant at " + participantBranchId);
         }
     }
 

@@ -362,6 +362,11 @@ public class TransferService {
                                         request.getFromAccountId(),
                                         request.getToAccountId());
 
+                        // Ghi participant: SOURCE đang PREPARING
+                        txnLogger.addParticipant(txnId, sourceBranch, sourceBranch, "SOURCE", "PREPARING", "DEBIT");
+                        // Ghi participant: DESTINATION đang PREPARING
+                        txnLogger.addParticipant(txnId, sourceBranch, destBranch, "DESTINATION", "PREPARING", "CREDIT");
+
                         // =========================
                         // STEP 1: ĐỌC SỐ DƯ BAN ĐẦU
                         // =========================
@@ -487,6 +492,9 @@ public class TransferService {
 
                         logs.add("PREPARE SOURCE THÀNH CÔNG");
 
+                        // Cập nhật participant: SOURCE đã PREPARED
+                        txnLogger.updateParticipantStatus(txnId, sourceBranch, sourceBranch, "PREPARED");
+
                         // =========================
                         // GIẢ LẬP DESTINATION SERVER CRASH
                         // =========================
@@ -555,6 +563,9 @@ public class TransferService {
 
                         logs.add("PREPARE DEST THÀNH CÔNG");
 
+                        // Cập nhật participant: DESTINATION đã PREPARED
+                        txnLogger.updateParticipantStatus(txnId, sourceBranch, destBranch, "PREPARED");
+
                         System.out.println();
                         System.out.println(
                                         "TẤT CẢ SITE ĐÃ PREPARE THÀNH CÔNG");
@@ -609,6 +620,9 @@ public class TransferService {
 
                         logs.add("COMMIT SOURCE THÀNH CÔNG");
 
+                        // Cập nhật participant: SOURCE đã COMMITTED
+                        txnLogger.updateParticipantStatus(txnId, sourceBranch, sourceBranch, "COMMITTED");
+
                         // COMMIT DEST
                         destTxManager.commit(destTx);
 
@@ -616,6 +630,9 @@ public class TransferService {
                                         "COMMIT DEST THÀNH CÔNG");
 
                         logs.add("COMMIT DEST THÀNH CÔNG");
+
+                        // Cập nhật participant: DESTINATION đã COMMITTED
+                        txnLogger.updateParticipantStatus(txnId, sourceBranch, destBranch, "COMMITTED");
 
                         txnLogger.updateTransactionStatus(
                                         txnId,
@@ -727,6 +744,9 @@ public class TransferService {
 
                                         logs.add(
                                                         "ROLLBACK SOURCE THÀNH CÔNG");
+
+                                        // Cập nhật participant: SOURCE đã ABORTED
+                                        txnLogger.updateParticipantStatus(txnId, sourceBranch, sourceBranch, "ABORTED");
                                 }
 
                         } catch (Exception ignored) {
@@ -746,6 +766,9 @@ public class TransferService {
 
                                         logs.add(
                                                         "ROLLBACK DEST THÀNH CÔNG");
+
+                                        // Cập nhật participant: DESTINATION đã ABORTED
+                                        txnLogger.updateParticipantStatus(txnId, sourceBranch, destBranch, "ABORTED");
                                 }
 
                         } catch (Exception ignored) {

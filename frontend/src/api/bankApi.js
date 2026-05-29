@@ -63,6 +63,7 @@ export const statsApi = {
   getTopCustomers: (limit = 10) => API.get(`/stats/top-customers?limit=${limit}`),
   getTopDepositingCustomers: (limit = 10) => API.get(`/stats/top-depositing-customers?limit=${limit}`),
   getInterBranchTransactions: () => API.get('/stats/inter-branch-transactions'),
+  getIntraBranchTransactions: () => API.get('/stats/intra-branch-transactions'),
   getDepositHistory: (limit = 50) => API.get(`/stats/history/deposit?limit=${limit}`),
   getWithdrawHistory: (limit = 50) => API.get(`/stats/history/withdraw?limit=${limit}`),
   getMultiBranchCustomers: () => API.get('/stats/multi-branch-customers'),

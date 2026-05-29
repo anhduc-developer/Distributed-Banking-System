@@ -249,6 +249,54 @@ public class DistributedQueryService {
     }
 
     // ============================================================
+    // QUERY 3.5: Giao dịch cùng chi nhánh
+    // ============================================================
+
+    public List<TransactionHistory> getIntraBranchTransactions() {
+        System.out.println("═══ [DISTRIBUTED QUERY] Intra-Branch Transactions ═══");
+
+        List<TransactionHistory> allTxns = new ArrayList<>();
+
+        RowMapper<TransactionHistory> mapper = (rs, rowNum) -> {
+            TransactionHistory t = new TransactionHistory();
+            t.setTransactionId(rs.getLong("transaction_id"));
+            t.setTransactionType(rs.getString("transaction_type"));
+            t.setAmount(rs.getBigDecimal("amount"));
+            t.setAccountId(rs.getLong("account_id"));
+            long relId = rs.getLong("related_account_id");
+            t.setRelatedAccountId(rs.wasNull() ? null : relId);
+            t.setRelatedBranchId(rs.getString("related_branch_id"));
+            t.setBalanceAfter(rs.getBigDecimal("balance_after"));
+            t.setStatus(rs.getString("status"));
+            t.setDistributedTxnId(rs.getString("distributed_txn_id"));
+            t.setDescription(rs.getString("description"));
+            t.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            return t;
+        };
+
+        for (String branchId : siteRouter.getAllBranchIds()) {
+            try {
+                JdbcTemplate jdbc = siteRouter.getJdbcTemplate(branchId);
+                List<TransactionHistory> txns = jdbc.query(
+                        "SELECT * FROM transaction_history " +
+                        "WHERE transaction_type IN ('TRANSFER_IN', 'TRANSFER_OUT') " +
+                        "ORDER BY created_at DESC LIMIT 50",
+                        mapper);
+                allTxns.addAll(txns);
+            } catch (Exception e) {
+                System.out.println("  Site " + branchId + ": UNREACHABLE");
+            }
+        }
+
+        // Sort by created_at DESC
+        allTxns.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        System.out.println("  Total intra-branch transactions: " + allTxns.size());
+        System.out.println("═══════════════════════════════════════════");
+
+        return allTxns;
+    }
+
+    // ============================================================
     // QUERY: Lịch sử giao dịch Gửi Tiền (Deposit) / Rút Tiền (Withdraw)
     // ============================================================
 

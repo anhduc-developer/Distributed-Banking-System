@@ -44,6 +44,11 @@ public class QueryController {
         return ApiResponse.ok(queryService.getInterBranchTransactions());
     }
 
+    @GetMapping("/intra-branch-transactions")
+    public ApiResponse<List<TransactionHistory>> getIntraBranchTransactions() {
+        return ApiResponse.ok(queryService.getIntraBranchTransactions());
+    }
+
     @GetMapping("/history/deposit")
     public ApiResponse<List<TransactionHistory>> getDepositHistory(
             @RequestParam(name = "limit", defaultValue = "50") int limit) {

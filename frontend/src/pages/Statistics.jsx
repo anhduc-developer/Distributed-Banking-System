@@ -14,6 +14,7 @@ export default function Statistics() {
   const [totalBalance, setTotalBalance] = useState(null);
   const [topCustomers, setTopCustomers] = useState([]);
   const [interTxns, setInterTxns] = useState([]);
+  const [intraTxns, setIntraTxns] = useState([]);
   const [depositTxns, setDepositTxns] = useState([]);
   const [withdrawTxns, setWithdrawTxns] = useState([]);
   const [multiBranch, setMultiBranch] = useState([]);
@@ -38,6 +39,11 @@ export default function Statistics() {
         case 'inter': {
           const res = await statsApi.getInterBranchTransactions();
           setInterTxns(res.data.data || []);
+          break;
+        }
+        case 'intra': {
+          const res = await statsApi.getIntraBranchTransactions();
+          setIntraTxns(res.data.data || []);
           break;
         }
         case 'deposit_history': {
@@ -165,6 +171,32 @@ export default function Statistics() {
               title: 'TXN ID', dataIndex: 'distributedTxnId', ellipsis: true,
               render: (v) => v ? <Tag color="orange">{v}</Tag> : '-'
             },
+            {
+              title: 'Trạng thái', dataIndex: 'status',
+              render: (v) => <Tag color={v === 'SUCCESS' ? 'green' : 'red'}>{v}</Tag>
+            },
+            {
+              title: 'Thời gian', dataIndex: 'createdAt',
+              render: (v) => v ? new Date(v).toLocaleString('vi-VN') : '-'
+            },
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'intra',
+      label: <><SwapOutlined /> GD cùng chi nhánh</>,
+      children: (
+        <Table loading={loading} dataSource={intraTxns} rowKey="transactionId" pagination={{ pageSize: 10 }}
+          columns={[
+            { title: 'ID', dataIndex: 'transactionId', width: 50 },
+            {
+              title: 'Loại', dataIndex: 'transactionType',
+              render: (v) => <Tag color={v.includes('OUT') ? 'magenta' : 'purple'}>{v}</Tag>
+            },
+            { title: 'Số tiền', dataIndex: 'amount', render: (v) => `${fmt(v)} ₫` },
+            { title: 'TK', dataIndex: 'accountId' },
+            { title: 'TK đối ứng', dataIndex: 'relatedAccountId', render: (v) => v || '-' },
             {
               title: 'Trạng thái', dataIndex: 'status',
               render: (v) => <Tag color={v === 'SUCCESS' ? 'green' : 'red'}>{v}</Tag>
